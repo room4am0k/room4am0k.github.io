@@ -104,6 +104,19 @@ a:focus-visible {
 .nav a[aria-current="page"] { opacity: 1; }
 .nav a[aria-current="page"] { color: var(--accent); }
 
+/* Contador de visitas (esquina superior izquierda, discreto) */
+.visits {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  opacity: 0.7;
+}
+
 /* 4. VISTA: INICIO --------------------------------------------------------- */
 .hero {
   position: relative;
@@ -427,6 +440,7 @@ main { overflow-x: clip; }
 
 <!-- NAVEGACIÓN -->
 <header class="nav" id="nav">
+  <span class="visits" id="visits" title="Visitas" hidden></span>
   <nav aria-label="Principal">
     <ul>
       <li><a href="#proyectos" data-link="proyectos">Proyectos</a></li>
@@ -643,6 +657,10 @@ main { overflow-x: clip; }
       ]
     }
   ];
+
+  /* Contador de visitas. Cuenta cada carga de la página.
+     Namespace y key se eligen libremente; el servicio los crea la primera vez. */
+  const VISIT_COUNTER = { namespace: "room4am0k", key: "visits" };
 
   /* Nombre rotativo del inicio. El tiempo está en milisegundos. */
   const ROTATION = [
@@ -894,7 +912,23 @@ main { overflow-x: clip; }
     }).format(new Date(LAST_UPDATED)) + " (GMT-3)";
   }
 
+  /** Suma una visita y muestra el total. Si el servicio no responde, el contador queda oculto. */
+  async function countVisit() {
+    const node = document.getElementById("visits");
+    try {
+      const url = `https://abacus.jasoncameron.dev/hit/${VISIT_COUNTER.namespace}/${VISIT_COUNTER.key}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(response.status);
+      const data = await response.json();
+      node.textContent = Number(data.value).toLocaleString("es");
+      node.hidden = false;
+    } catch (error) {
+      node.hidden = true;
+    }
+  }
+
   startRotator(document.getElementById("rotator"));
+  countVisit();
   renderProjects(document.getElementById("projects-root"));
   renderArticles(document.getElementById("howtos-root"), HOWTOS, "Todavía no hay artículos aquí.");
   renderArticles(document.getElementById("whys-root"), WHYS, "Todavía no hay artículos aquí.");
