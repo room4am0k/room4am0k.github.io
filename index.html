@@ -6,8 +6,441 @@
 <title>room4am0k</title>
 <meta name="description" content="Diego Pacheco: tecnología, datos y operaciones.">
 <meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
 
-<style>
+<style id="style-apple" media="all">
+/* ==========================================================================
+   ÍNDICE
+   1. Tokens (colores, tipografía)
+   2. Base
+   3. Barra de navegación
+   4. Vista: inicio
+   5. Pie de página
+   6. Vistas comunes (Proyectos, ¿Cómo hacerlo?, ¿Por qué?)
+   7. Componente: tarjeta de proyecto
+   8. Componente: artículo
+   9. Transición entre vistas
+   10. Pantallas anchas y movimiento reducido
+   ========================================================================== */
+
+/* 1. TOKENS ---------------------------------------------------------------- */
+:root {
+  --bg: #fbfbfd;
+  --bg-nav: rgba(251, 251, 253, 0.8);
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --line: #d2d2d7;
+  --accent: #0071e3;
+  --glow: rgba(0, 113, 227, 0.08);
+  --nav-h: 52px;
+  --dx: 56px;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101012;
+    --bg-nav: rgba(16, 16, 18, 0.8);
+    --surface: #19191c;
+    --text: #f5f5f7;
+    --muted: #a1a1a6;
+    --line: #3a3a3e;
+    --accent: #2997ff;
+    --glow: rgba(41, 151, 255, 0.12);
+  }
+}
+
+/* 2. BASE ------------------------------------------------------------------ */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* 3. BARRA DE NAVEGACIÓN --------------------------------------------------- */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-nav);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.25s ease;
+}
+.nav.is-scrolled { border-bottom-color: var(--line); }
+.nav ul {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0 16px;
+  max-width: 1080px;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 5vw, 56px);
+}
+.nav a {
+  color: var(--text);
+  text-decoration: none;
+  font-size: clamp(0.8rem, 3.4vw, 0.95rem);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  opacity: 0.6;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+.nav a:hover,
+.nav a[aria-current="page"] { opacity: 1; }
+.nav a[aria-current="page"] { color: var(--accent); }
+
+/* Contador de visitas (esquina superior izquierda, discreto) */
+.visits {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  opacity: 0.7;
+}
+
+/* 4. VISTA: INICIO --------------------------------------------------------- */
+.hero {
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100vh - var(--nav-h));
+  min-height: calc(100svh - var(--nav-h));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 20px 72px;
+}
+/* Resplandor muy suave detrás del nombre */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(60% 45% at 50% 38%, var(--glow), transparent 72%);
+  pointer-events: none;
+}
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2.6rem, 12vw, 8rem);
+  font-weight: 600;
+  line-height: 1.03;
+  letter-spacing: -0.045em;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Nombre rotativo: el tamaño cambia según el texto que se muestra */
+.rotator { transition: opacity 0.4s ease; }
+.rotator.is-fading { opacity: 0; }
+.rotator[data-size="md"] {
+  font-size: clamp(1.9rem, 7vw, 4rem);
+  letter-spacing: -0.035em;
+}
+
+/* Cascada de áreas */
+.areas {
+  list-style: none;
+  margin: clamp(36px, 7vh, 72px) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(8px, 1.6vh, 14px);
+}
+.areas li {
+  font-size: clamp(0.85rem, 2.8vw, 1.05rem);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em; /* compensa el espaciado final para centrar */
+  color: var(--muted);
+  opacity: 0;
+  transform: translateY(8px);
+  animation: cascade 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: calc(var(--i) * 140ms + 300ms);
+}
+@keyframes cascade {
+  to { opacity: 1; transform: none; }
+}
+
+/* Descripción corta bajo la cascada */
+.status {
+  max-width: 42ch;
+  margin: clamp(28px, 5vh, 44px) 0 0;
+  color: var(--muted);
+  font-size: clamp(0.9rem, 2.6vw, 1rem);
+  line-height: 1.5;
+  opacity: 0;
+  animation: cascade 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: 1100ms;
+}
+.status::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
+}
+
+/* Desplegable "Portfolio" */
+.portfolio {
+  width: 100%;
+  max-width: 360px;
+  margin-top: clamp(20px, 4vh, 32px);
+}
+.portfolio > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+  list-style: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.portfolio > summary::-webkit-details-marker { display: none; }
+.portfolio > summary:hover { border-color: var(--accent); }
+.portfolio > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.portfolio > summary::after {
+  content: "+";
+  color: var(--accent);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.portfolio[open] > summary::after { content: "\2212"; }
+.portfolio-body {
+  padding: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  text-align: center;
+}
+.portfolio-body p { margin: 0; }
+
+/* 5. PIE DE PÁGINA --------------------------------------------------------- */
+.footer {
+  padding: 24px 20px 32px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.footer p { margin: 0; }
+
+/* 6. VISTAS COMUNES -------------------------------------------------------- */
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(28px, 6vw, 72px) 20px 96px;
+}
+.back {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.back:hover { color: var(--accent); }
+.page-title {
+  margin: 0;
+  font-size: clamp(2rem, 7vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  outline: none;
+}
+.page-lead {
+  max-width: 60ch;
+  margin: 0.7em 0 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 2.6vw, 1.2rem);
+  line-height: 1.5;
+}
+.page-body { margin-top: clamp(28px, 5vw, 48px); }
+.empty { margin: 0; color: var(--muted); }
+
+/* 7. COMPONENTE: TARJETA DE PROYECTO --------------------------------------- */
+.projects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.card-meta { margin: 0; color: var(--accent); font-size: 0.85rem; font-weight: 500; }
+.card-title { margin: 0; font-size: 1.3rem; font-weight: 600; letter-spacing: -0.02em; }
+.card-summary { margin: 0; color: var(--muted); font-size: 0.98rem; line-height: 1.55; }
+.tags {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tags li {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.card-links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: auto; padding-top: 4px; }
+.card-links a { color: var(--accent); font-size: 0.95rem; text-decoration: none; }
+.card-links a:hover { text-decoration: underline; }
+
+/* 8. COMPONENTE: ARTÍCULO -------------------------------------------------- */
+.howto { border-top: 1px solid var(--line); }
+.howto:last-child { border-bottom: 1px solid var(--line); }
+.howto > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  padding: 20px 0;
+  list-style: none;
+  cursor: pointer;
+}
+.howto > summary::-webkit-details-marker { display: none; }
+.howto > summary::after {
+  content: "";
+  flex: none;
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  margin: 0 4px 0 auto;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+.howto[open] > summary::after { transform: rotate(-135deg); }
+.howto > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.howto-num { color: var(--muted); font-weight: 500; }
+.howto-title {
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+.howto-summary {
+  flex-basis: 100%;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.article { max-width: 68ch; padding: 4px 0 40px; font-size: clamp(1rem, 2.6vw, 1.08rem); line-height: 1.7; }
+.article p { margin: 0 0 1.1em; }
+.article h3 {
+  margin: 2em 0 0.6em;
+  font-size: clamp(1.15rem, 3.4vw, 1.4rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+.article-list { margin: 0 0 1.2em; padding-left: 1.3em; }
+.article-list li { margin-bottom: 0.55em; }
+
+.prompt {
+  margin: 1.4em 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.prompt-bar { display: flex; justify-content: flex-end; padding: 10px 12px 0; }
+.copy {
+  padding: 5px 14px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.copy:hover { border-color: var(--accent); }
+.copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.prompt pre {
+  margin: 0;
+  padding: 10px 18px 18px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 9. TRANSICIÓN ENTRE VISTAS ----------------------------------------------
+   Si avanzas en la barra, la vista actual sale a la izquierda y la nueva
+   entra desde la derecha; si vuelves, es al revés. */
+main { overflow-x: clip; }
+.is-leaving { animation: view-out 0.24s cubic-bezier(0.4, 0, 1, 1) forwards; }
+.is-entering { animation: view-in 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.is-entering .page-title { animation: title-in 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+@keyframes view-out { to { opacity: 0; transform: translateX(calc(var(--dx) * -1 * var(--dir, 1))); } }
+@keyframes view-in { from { opacity: 0; transform: translateX(calc(var(--dx) * 0.45 * var(--dir, 1))); } }
+@keyframes title-in { from { opacity: 0; transform: translateX(calc(var(--dx) * var(--dir, 1))); } }
+
+/* 10. PANTALLAS ANCHAS Y MOVIMIENTO REDUCIDO ------------------------------- */
+@media (min-width: 1100px) {
+  :root { --nav-h: 56px; }
+  .nav a { font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .areas li, .status { opacity: 1; transform: none; animation: none; }
+  .is-leaving, .is-entering, .is-entering .page-title { animation: none; }
+}
+
+/* Elementos de la versión foro: no aparecen en Apple */
+.crumbs { display: none !important; }
+</style>
+<style id="style-forum" media="not all">
 /* ==========================================================================
    ESTÉTICA: foro antiguo, metal, Y2K
    ÍNDICE
@@ -23,6 +456,13 @@
    10. Transición entre vistas
    11. Movimiento reducido
    ========================================================================== */
+
+@font-face {
+  font-family: "DSEG7 Classic";
+  src: url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
 
 /* 1. TOKENS ---------------------------------------------------------------- */
 :root {
@@ -40,9 +480,13 @@
   --blue-bar: linear-gradient(#4f86ff, #1f4bb8 50%, #12307a 52%, #1a3f9e);
   --bevel: inset 1px 1px 0 rgba(255, 255, 255, 0.9), inset -1px -1px 0 rgba(0, 0, 0, 0.35);
   --dx: 56px;
-  --font: Tahoma, Verdana, "Trebuchet MS", "Segoe UI", sans-serif;
-  --display: "Arial Black", Impact, "Helvetica Neue", Arial, sans-serif;
-  --mono: "Courier New", ui-monospace, monospace;
+  /* Tipografía inspirada en el rotulado de equipos Sony de los 80 y 90:
+     grotesca extendida para títulos, etiquetas en versalitas y dígitos de 7 segmentos. */
+  --font: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --display: "Archivo", "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  --label: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --lcd-font: "DSEG7 Classic", "Courier New", monospace;
+  --code: "Courier New", ui-monospace, monospace;
 }
 
 /* 2. BASE Y FONDO ---------------------------------------------------------- */
@@ -61,7 +505,7 @@ body {
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px),
     var(--bg);
 }
-::selection { background: #3f7dff; color: #fff; }
+::selection { background: #ff3da6; color: #fff; }
 a:focus-visible, summary:focus-visible, button:focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
@@ -118,14 +562,14 @@ a:focus-visible, summary:focus-visible, button:focus-visible {
 .visits {
   padding: 3px 7px;
   color: var(--lcd);
-  font: 700 0.7rem/1 var(--mono);
-  letter-spacing: 0.12em;
+  font: 700 0.75rem/1 var(--lcd-font);
+  letter-spacing: 0.1em;
   text-shadow: 0 0 6px rgba(107, 255, 154, 0.7);
   background: #04110a;
   border: 1px solid #1b2230;
   box-shadow: inset 1px 1px 3px #000, 0 1px 0 rgba(255, 255, 255, 0.7);
 }
-.visits::before { content: "HITS "; opacity: 0.55; }
+.visits::before { content: "HITS "; opacity: 0.55; font: 600 0.55rem var(--label); letter-spacing: 0.14em; }
 
 /* 4. MIGAS DE PAN ---------------------------------------------------------- */
 .crumbs {
@@ -133,7 +577,7 @@ a:focus-visible, summary:focus-visible, button:focus-visible {
   margin: 0 auto;
   padding: 10px 14px 0;
   color: var(--steel-lo);
-  font: 0.75rem var(--mono);
+  font: 0.75rem var(--label);
 }
 main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip; }
 
@@ -147,33 +591,10 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
   align-items: center;
   text-align: center;
   padding: clamp(36px, 9vh, 80px) 18px clamp(36px, 7vh, 64px);
-  background: linear-gradient(#141b2b, #0a0f1a);
+  background: linear-gradient(rgba(20, 27, 43, 0.84), rgba(10, 15, 26, 0.9));
   border: 2px solid var(--edge);
   border-radius: 6px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-/* Esfera cromada, la firma visual del Y2K */
-.hero::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  top: -8%;
-  right: -6%;
-  width: clamp(160px, 32vw, 280px);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, #fff 0 6%, #cfe0ff 12%, #5f8cff 38%, #14307a 68%, #050a1c 100%);
-  box-shadow: 0 0 60px rgba(63, 125, 255, 0.45);
-  opacity: 0.7;
-}
-/* Líneas de escaneo */
-.hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 3px);
-  pointer-events: none;
 }
 .hero h1 {
   margin: 0;
@@ -181,7 +602,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
   overflow-wrap: anywhere;
   font-family: var(--display);
   font-weight: 900;
-  font-size: clamp(2.4rem, 11vw, 6.5rem);
+  font-size: clamp(2rem, 9.5vw, 5.6rem);
   line-height: 1.05;
   letter-spacing: -0.02em;
   background: linear-gradient(#fff 0%, #dfe5ee 38%, #7d8796 50%, #cfd6e1 52%, #f4f6fa 100%);
@@ -193,7 +614,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
 }
 .rotator { transition: opacity 0.4s ease; }
 .rotator.is-fading { opacity: 0; }
-.rotator[data-size="md"] { font-size: clamp(1.8rem, 8vw, 4rem); }
+.rotator[data-size="md"] { font-size: clamp(1.5rem, 7vw, 3.6rem); }
 
 .areas {
   list-style: none;
@@ -205,7 +626,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
   gap: 8px;
 }
 .areas li {
-  font: 700 clamp(0.72rem, 2.8vw, 0.95rem)/1.3 var(--mono);
+  font: 700 clamp(0.62rem, 2.5vw, 0.9rem)/1.3 var(--label);
   letter-spacing: 0.14em;
   color: var(--cyan);
   text-shadow: 0 0 8px rgba(103, 227, 255, 0.55);
@@ -221,7 +642,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
   max-width: 42ch;
   margin: clamp(24px, 5vh, 40px) 0 0;
   color: var(--steel);
-  font: 0.9rem/1.5 var(--mono);
+  font: 0.9rem/1.5 var(--label);
   opacity: 0;
   animation: cascade 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   animation-delay: 1100ms;
@@ -246,13 +667,13 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
   box-shadow: var(--bevel);
 }
 .portfolio > summary::-webkit-details-marker { display: none; }
-.portfolio > summary::after { content: "[+]"; font-family: var(--mono); color: var(--blue); }
+.portfolio > summary::after { content: "[+]"; font-family: var(--label); color: var(--blue); }
 .portfolio[open] > summary::after { content: "[\2212]"; }
 .portfolio-body {
   margin-top: 6px;
   padding: 12px;
   color: var(--lcd);
-  font: 0.85rem var(--mono);
+  font: 0.85rem var(--label);
   text-align: center;
   background: #04110a;
   border: 1px solid #1b2230;
@@ -299,7 +720,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
 }
 .page-lead { margin: 4px 0 0; color: #cfe0ff; font-size: 0.9rem; }
 .page-body { padding: clamp(14px, 3vw, 24px); }
-.empty { margin: 0; color: var(--ink-soft); font: 0.9rem var(--mono); }
+.empty { margin: 0; color: var(--ink-soft); font: 0.9rem var(--label); }
 
 /* 7. COMPONENTE: TARJETA DE PROYECTO --------------------------------------- */
 .projects {
@@ -323,7 +744,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
   margin: 0;
   padding: 5px 10px;
   color: #fff;
-  font: 700 0.72rem var(--mono);
+  font: 700 0.72rem var(--label);
   letter-spacing: 0.08em;
   background: var(--blue-bar);
 }
@@ -353,13 +774,13 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
   background: var(--metal);
 }
 .howto > summary::-webkit-details-marker { display: none; }
-.howto > summary::after { content: "[+]"; margin-left: auto; color: var(--blue); font: 700 0.8rem var(--mono); }
+.howto > summary::after { content: "[+]"; margin-left: auto; color: var(--blue); font: 700 0.8rem var(--label); }
 .howto[open] > summary { border-bottom: 1px solid var(--edge); }
 .howto[open] > summary::after { content: "[\2212]"; }
 .howto-num {
   padding: 1px 6px;
   color: var(--lcd);
-  font: 700 0.72rem var(--mono);
+  font: 700 0.72rem var(--label);
   background: #04110a;
   border: 1px solid #1b2230;
 }
@@ -395,7 +816,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
   margin: 0;
   padding: 10px 14px 16px;
   color: var(--lcd);
-  font: 0.8rem/1.6 var(--mono);
+  font: 0.8rem/1.6 var(--code);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -406,7 +827,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
   margin: 18px auto 0;
   padding: 16px 14px 28px;
   color: var(--steel-lo);
-  font: 0.72rem/1.6 var(--mono);
+  font: 0.72rem/1.6 var(--label);
   text-align: center;
   border-top: 1px solid #2a3344;
 }
@@ -422,6 +843,18 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
 @keyframes view-in { from { opacity: 0; transform: translateX(calc(var(--dx) * 0.45 * var(--dir, 1))); } }
 @keyframes title-in { from { opacity: 0; transform: translateX(calc(var(--dx) * var(--dir, 1))); } }
 
+/* 10b. RÓTULOS ESTILO SONY ---------------------------------------------------
+   Títulos en grotesca extendida; etiquetas en mayúsculas con espaciado amplio. */
+.hero h1, .page-title, .card-title, .howto-title, .article h3 { font-stretch: 125%; }
+.page-title, .card-title, .howto-title, .article h3 { font-weight: 800; }
+.nav a { font-stretch: 108%; }
+.crumbs, .areas li, .card-meta, .howto-num, .footer, .visits::before {
+  font-stretch: 112%;
+  text-transform: uppercase;
+}
+.crumbs, .footer { letter-spacing: 0.12em; }
+.status, .portfolio-body, .empty { font-stretch: 108%; }
+
 /* 11. MOVIMIENTO REDUCIDO -------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -430,6 +863,24 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
   .is-leaving, .is-entering, .is-entering .page-title { animation: none; }
 }
 </style>
+<style id="style-switch-css">
+/* Interruptor de versión (arriba a la derecha). Colores del sistema: se ve en ambas versiones. */
+.style-switch {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 3px 10px;
+  font: 600 0.7rem/1.4 system-ui, -apple-system, Helvetica, Arial, sans-serif;
+  color: CanvasText;
+  background: Canvas;
+  border: 1px solid GrayText;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.style-switch:hover { border-color: CanvasText; }
+.style-switch:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+</style>
 </head>
 
 <body>
@@ -437,6 +888,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
 <!-- NAVEGACIÓN -->
 <header class="nav" id="nav">
   <span class="visits" id="visits" title="Visitas" hidden></span>
+  <button type="button" class="style-switch" id="style-switch" aria-pressed="false"></button>
   <nav aria-label="Principal">
     <ul>
       <li><a href="#proyectos" data-link="proyectos">Proyectos</a></li>
@@ -447,6 +899,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
 </header>
 
 <div class="crumbs" id="crumbs"></div>
+
 
 <main>
 
@@ -505,7 +958,6 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
 
 <footer class="footer">
   <p>Última actualización: <time id="last-update"></time></p>
-  <p>Mejor visto en 1024×768</p>
 </footer>
 
 <script>
@@ -525,7 +977,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
   /* 1. DATOS -------------------------------------------------------------- */
 
   /* Fecha de la última actualización, en GMT-3. Cámbiala al subir una versión nueva. */
-  const LAST_UPDATED = "2026-11-16T21:29:00-03:00";
+  const LAST_UPDATED = "2026-11-17T17:36:00-03:00";
 
   /* Proyectos. Campos: title, year, status, summary, tags[], links[{label, href}].
      Los campos opcionales pueden ir vacíos. */
@@ -667,6 +1119,7 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
     { text: "room4am0k", size: "lg", ms: 7000 },
     { text: "diewowowi", size: "md", ms: 7000 }
   ];
+
 
   /* 2. UTILIDADES ------------------------------------------------------- */
 
@@ -928,6 +1381,34 @@ main { max-width: 1000px; margin: 10px auto 0; padding: 0 12px; overflow-x: clip
     }
   }
 
+
+  /* Interruptor de versión: Apple (por defecto) o foro antiguo. Se recuerda en este navegador. */
+  const STYLE_KEY = "room4am0k-estilo";
+  const appleStyle = document.getElementById("style-apple");
+  const forumStyle = document.getElementById("style-forum");
+  const styleSwitch = document.getElementById("style-switch");
+
+  function applyStyle(name) {
+    const isForum = name === "forum";
+    appleStyle.media = isForum ? "not all" : "all";
+    forumStyle.media = isForum ? "all" : "not all";
+    styleSwitch.textContent = isForum ? "Apple" : "Foro";
+    styleSwitch.setAttribute("aria-label", isForum ? "Cambiar al estilo Apple" : "Cambiar al estilo foro antiguo");
+    styleSwitch.setAttribute("aria-pressed", String(isForum));
+  }
+
+  function initStyleSwitch() {
+    let saved = "apple";
+    try { saved = localStorage.getItem(STYLE_KEY) || "apple"; } catch (e) { /* sin almacenamiento */ }
+    applyStyle(saved);
+    styleSwitch.addEventListener("click", () => {
+      const next = forumStyle.media === "all" ? "apple" : "forum";
+      applyStyle(next);
+      try { localStorage.setItem(STYLE_KEY, next); } catch (e) { /* sin almacenamiento */ }
+    });
+  }
+
+  initStyleSwitch();
   startRotator(document.getElementById("rotator"));
   countVisit();
   renderProjects(document.getElementById("projects-root"));
